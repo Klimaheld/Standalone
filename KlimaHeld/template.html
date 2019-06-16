@@ -1,0 +1,409 @@
+﻿<h1 data-section="title" class="align_center title_underline width_wide">Interaktiver Kostenrechner</h1>
+<form id="compare_fuel">
+    <div class="flex_container">
+        <!--General Data -->
+        <fieldset data-section="form" id="general_data">
+
+            <div>
+                <label for="distance" class="label_title">Distanz</label>
+                <input data-bind="value: distance, valueUpdate: 'afterkeydown'"
+                       id="distance"
+                       name="distance"
+                       type="number"
+                       step="500"
+                       min="0"
+                       max="9999999"
+                       value="10000"
+                       size="8"
+                       required />
+                <span class="unit">km</span>
+                <info class="info_text" data-info="Die durchschnittlich gefahrene Fahrstrecke pro Jahr.">i</info>
+            </div>
+
+            <div>
+                <label for="years" class="label_title">Jahre</label>
+                <input data-bind="value: years, valueUpdate: 'afterkeydown'"
+                       id="years"
+                       name="years"
+                       type="number"
+                       step="1"
+                       min="0"
+                       max="99"
+                       value="4"
+                       size="3"
+                       required />
+            </div>
+
+            <div>
+                <label for="fuel_price" class="label_title">Benzinpreis</label>
+                <input data-bind="value: fuelPrice, valueUpdate: 'afterkeydown'"
+                       id="fuel_price"
+                       name="fuel_price"
+                       type="number"
+                       step="0.01"
+                       min="0"
+                       max="99"
+                       value="1.4"
+                       size="3"
+                       required />
+                <span class="unit">CHF/ℓ</span>
+            </div>
+
+            <div>
+                <label for="canton" class="label_title">Kanton</label>
+                <select data-bind="options: availableCantons, optionsText: 'cantonName', optionsValue: 'cantonShortcut', value: selectedCanton" id="canton" name="canton"></select>
+                <info class="info_text" data-info="Entscheidet wie die Motorfahrzeugsteuer berechnet wird. Einige Kantone gewähren Ermässigungen auf die Motorfahrzeugsteuer.">i</info>
+            </div>
+
+
+            <label class="no_block label_title more_options">
+                <input type="checkbox" value="0" data-bind="checked: moreOptions" />Alle Werte anzeigen
+            </label>
+
+            <!--More Option -->
+            <section class="more_options_section" data-bind='fadeVisible: $root.moreOptions'>
+
+                <div>
+                    <label for="electricity_price_home" class="label_title">Strompreis zu Hause</label>
+                    <input data-bind="value: electricityPriceHome, valueUpdate: 'afterkeydown'"
+                           id="electricity_price_home"
+                           name="electricity_price_home"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           value="50" />
+                    <span class="unit">Rp/kWh</span>
+                </div>
+
+                <div>
+                    <label for="electricity_price_away" class="label_title">Strompreis an Schnellladestationen</label>
+                    <input data-bind="value: electricityPriceAway, valueUpdate: 'afterkeydown'"
+                           id="electricity_price_away"
+                           name="electricity_price_away"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           value="999" />
+                    <span class="unit">Rp/kWh</span>
+                </div>
+
+                <div>
+                    <label for="charging_percentage" class="label_title">Zuhause laden</label>
+                    <input data-bind="value: chargingPercentage, valueUpdate: 'afterkeydown'"
+                           id="charging_percentage"
+                           name="charging_percentage"
+                           type="number"
+                           step="1"
+                           min="0"
+                           max="100"
+                           value="5" />
+                    <span class="unit">%</span>
+                    <info class="info_text" data-info="Prozentsatz des zu Hause geladenen Stroms, anstatt an Schnellladestationen.">i</info>
+                </div>
+            </section>
+
+            <button id="add_car" data-bind="click: addCar">
+                Neues Fahrzeug hinzufügen
+            </button>
+
+
+            <button id="create_link" onclick="postLink(event, 1118)">
+                Link teilen
+            </button>
+
+            <input type='hidden' id='_post_token' tokenName='TOKEN357207078X1560686765' tokenValue='LlFIUCer75Ok1XrQlK2GdXIGPyJrXG/Y' />
+        </fieldset>
+
+        <div data-section="chart" class="container_chart">
+            <canvas id="chart"></canvas>
+        </div>
+
+    </div>
+
+
+
+    <!--Car specific Data ======================================================== -->
+
+    <ul data-section="cars" id="car_list" data-bind="foreach: displayCars">
+        <li class="car_container">
+            <fieldset class="car" propulsion="" data-bind="attr: {propulsion: propulsion}">
+
+                <div id="remove_car" data-bind="click: $root.removeCar">
+                    <svg version="1.1" id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 16 16" style="enable-background:new 0 0 16 16;" xml:space="preserve">
+                    <polygon class="icon_close" points="15.8,2.7 13.1,0.1 7.9,5.3 2.7,0.1 0,2.7 5.3,7.9 0,13.1 2.7,15.8 7.9,10.6 13.1,15.8 15.8,13.1 10.6,7.9 "></polygon>
+
+                                </svg>
+                </div>
+
+                <select class="cars_dropdown" data-bind="options: $root.allCars, optionsCaption: 'Auto wählen…', optionsText: 'fullName', value: selectedCar"></select>
+
+                <!-- ko if: isElectric() -->
+                <span class="icon_favorite">
+                    <span data-bind="html: favoriteStar, click: $root.toggleFavorite, css: favoriteClass"></span>
+                </span>
+                <!-- /ko -->
+
+                <div class="car_designation">
+                    <div class="car_color" data-bind="style: { backgroundColor: carColor}"></div>
+                    <h3 class="car_name" data-bind="text: fullName">Auto platzhalter</h3>
+                </div>
+
+                <div class="car_picture cover_image">
+                    <!-- ko if: carLink() -->
+                    <a href="" target="_blank" data-bind="attr: { href: carLink }">
+                        <img src="" alt="" data-bind="attr: { src: picture }">
+                    </a>
+                    <!-- /ko -->
+                    <!-- ko if: !carLink() -->
+                    <img src="" alt="" data-bind="attr: { src: picture }">
+                    <!-- /ko -->
+                </div>
+
+
+
+                <!--Output-->
+                <div class="tcoPerMonth">
+                    <span class="label_title">Gesamtkosten:</span>
+                    <span data-bind="text: Math.round(totalCostPerMonth())"></span>
+                    <span class="unit">CHF/Monat</span>
+                </div>
+
+                <div class="tco">
+                    <span data-bind="text: Math.round(totalCost())"></span>
+                    <span class="unit">CHF Total</span>
+                </div>
+
+                <div class="fuel_year" data-bind='visible: isFossil'>
+                    <span class="label_title">
+                        Treibstoffkosten:
+                    </span>
+                    <span data-bind="text: Math.round(fuelCost())"></span>
+                    <span class="unit">
+                        CHF/Jahr
+                    </span>
+                </div>
+
+
+                <div class="charging_year" data-bind='visible: isElectric'>
+                    <span class="label_title">
+                        Stromkosten:
+                    </span>
+                    <span data-bind="text: Math.round(chargingCost())"></span>
+                    <span class="unit">
+                        CHF/Jahr
+                    </span>
+                </div>
+
+                <hr />
+
+                <!--Car Fields-->
+                <fieldset id="propulsion_type" data-bind="visible: isEditable">
+                    <label class="label_title">Antriebsart</label>
+                    <label class="no_block">
+                        <input type="radio" value="ecar" data-bind="checked: propulsion" />Elektrisch
+                    </label>
+                    <label class="no_block">
+                        <input type="radio" value="fcar" data-bind="checked: propulsion" />Fossil
+                    </label>
+                </fieldset>
+
+                <fieldset data-bind="visible: !isEditable()">
+                    <label class="label_title">Antriebsart</label>
+                    <label class="no_block">
+                        <span data-bind="visible: isElectric">Elektrisch</span>
+                    </label>
+                    <label class="no_block">
+                        <span data-bind="visible: isFossil">Fossil</span>
+                    </label>
+                </fieldset>
+
+
+                <!--Combustion-->
+                <span data-bind='visible: isFossil'>
+                    <label for="fuel_consumption" class="label_title">Treibstoffverbrauch</label>
+                    <input data-bind="value: fuelConsumption, valueUpdate: 'afterkeydown'"
+                           class="fuel_consumption"
+                           name="fuel_consumption"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           ma="999"
+                           value="8"
+                           size="4"
+                           required>
+                    <span class="unit">ℓ/100km</span>
+                    <info class="info_text fuel_consumption_info" data-info="NEFZ-Wert + 42%.">i</info>
+
+
+
+
+
+
+                </span>
+                <!--Electric-->
+                <span data-bind='visible: isElectric'>
+                    <label for="energy_consumption" class="label_title">Energieverbrauch </label>
+                    <input data-bind="value: energyConsumption, valueUpdate: 'afterkeydown'"
+                           class="energy_consumption"
+                           name="energy_consumption"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           max="999"
+                           value="15"
+                           size="4"
+                           required>
+                    <span class="unit">kWh/100km</span>
+                    <!-- ko if: usesWltp() -->
+                    <info class="info_text" data-info="WLTP-Wert + 15%.">i</info>
+                    <!-- /ko -->
+                    <!-- ko if: !usesWltp() -->
+                    <info class="info_text" data-info="NEFZ-Wert + 30%.">i</info>
+                    <!-- /ko -->
+
+                </span>
+
+                <fieldset id="payment_type">
+                    <label class="label_title">Kaufart</label>
+                    <label class="no_block">
+                        <input type="radio" value="buy" data-bind="checked: paymentType" />Kauf
+                    </label>
+
+                    <label class="no_block">
+                        <input type="radio" value="lease" data-bind="checked: paymentType" /> Lease
+                    </label>
+                </fieldset>
+
+                <span data-bind='visible: isLease'>
+                    <label for="leasing_cost" class="label_title">Leasingkosten</label>
+                    <input data-bind="value: leasingCost, valueUpdate: 'afterkeydown'"
+                           class="leasing_cost"
+                           name="leasing_cost"
+                           type="number"
+                           step="1"
+                           min="0"
+                           max="9999"
+                           value="500"
+                           size="5">
+                    <span class="unit">CHF/Monat</span>
+
+                    <label for="deposit" class="label_title">Anzahlung</label>
+                    <input data-bind="value: deposit, valueUpdate: 'afterkeydown'"
+                           class="deposit"
+                           name="deposit"
+                           type="number"
+                           step="100"
+                           min="0"
+                           max="99999"
+                           value="0">
+                    <span class="unit">CHF</span>
+                    <info class="info_text" data-info="Wird manchmal auch als erste oder einmalige grosse Rate bezeichnet.">i</info>
+                </span>
+
+                <span data-bind='visible: isBuy'>
+                    <label for="buying_cost" class="label_title">Kaufpreis</label>
+                    <input data-bind="value: buyingCost, valueUpdate: 'afterkeydown'"
+                           class="buying_cost"
+                           name="buying_cost"
+                           type="number"
+                           step="1"
+                           min="0"
+                           max="999999"
+                           value="35000">
+                    <span class="unit">CHF</span>
+                </span>
+
+
+                <!--More Options-->
+                <section>
+
+                    <label for="insurance_cost" class="label_title">Versicherungsprämie</label>
+                    <input data-bind="value: insuranceCost, valueUpdate: 'afterkeydown'"
+                           class="insurance_cost"
+                           name="insurance_cost"
+                           type="number"
+                           step="10"
+                           min="0"
+                           max="99999"
+                           value="0">
+                    <span class="unit">CHF/Jahr</span>
+                    <info class="info_text" data-info="Die Prämie ist fix und wird nicht von anderen Werten beeinflusst. Für Details bitte die Anmerkungen lesen.">i</info>
+
+                    <label for="vehicle_tax" class="label_title">Motorfahrzeugsteuer</label>
+                    <input data-bind="value: vehicleTax, valueUpdate: 'afterkeydown'"
+                           class="vehicle_tax"
+                           name="vehicle_tax"
+                           type="number"
+                           step="10"
+                           min="0"
+                           max="9999"
+                           value="0">
+                    <span class="unit">CHF/Jahr</span>
+                    <info class="info_text" data-info="Gemäss dem ausgewählten Kanton. Ohne verrechneten allfälligen CO2-Bonus.">i</info>
+
+
+                    <label for="service_cost" class="label_title">Service-/ Reparaturkosten</label>
+                    <input data-bind="value: serviceCost, valueUpdate: 'afterkeydown'"
+                           class="service_cost"
+                           name="service_cost"
+                           type="number"
+                           step="50"
+                           min="0"
+                           max="9999"
+                           value="0">
+                    <span class="unit">CHF/Jahr</span>
+                </section>
+            </fieldset>
+        </li>
+    </ul>
+
+    <br><br>
+
+</form>
+
+<section data-section="footer" class="tile width_wide annotations">
+    <div class="container_text">
+        <div class="text">
+            <h2>Anmerkungen</h2>
+
+            <ol>
+                <li>Kaufpreis: Der Kaufpreis ist der Basispreis des Herstellers ohne zusätzliche Ausstattung oder Extras. Wenn mehrer Ausstatungsvarianten erhältlich sind, wird die günstigste genommen. Bei Verbrennern wurde jeweils die Benzinversion mit Automatikgetriebe gewählt. Im Kaufpreis sind keine allfälligen Vergünstigungen, Rabatte oder Zuschläge enthalten.</li>
+                <li>Verbrauch: Da <a href="/de/glossar/nefz-neuer-europaeischer-fahrzyklus/" title="NEFZ steht für «Neuer europäischer Fahrzyklus». Es ist ein Testverfahren, dass bis September 2017 verwendet wurde um unter anderem den Energieverbrauch und den CO2-Ausstoss von Fahrzeugen zu messen. Der NEFZ wird schrittweise vom WLTP abgelöst." class="tooltip" data-tooltip="NEFZ steht für «Neuer europäischer Fahrzyklus». Es ist ein Testverfahren, dass bis September 2017 verwendet wurde um unter anderem den Energieverbrauch und den CO2-Ausstoss von Fahrzeugen zu messen. Der NEFZ wird schrittweise vom WLTP abgelöst." data-tooltip-image="">NEFZ</a>-Werte im alltäglichen Gebrauch einiges höher liegen, wird das Feld «Treibstoffverbrauch» bei Verbrennern für die Berechnung der Verbrauchskosten mit dem Faktor 1,42 multipliziert. Wir beziehen uns dabei auf die ausführliche Analyse der ICCT: <a href="https://www.theicct.org/sites/default/files/publications/Lab-to-road-2017_ICCT-white paper_06112017_vF.pdf" target="_blank">From Laboratory to Road – White Paper 2017 [PDF]</a> (englisch). Sie können auch die <a href="https://www.vcd.org/fileadmin/user_upload/Redaktion/Themen/Auto_Umwelt/CO2-Grenzwert/2017_-_ICCT_-_From_Laboratory_to_Road_-_FactSheet_German__2_.pdf" target="_blank">deutsche Kurzzusammenfassung</a> davon lesen. Bei Elektroautos wird das Feld «Energieverbrauch» mit dem Faktor 1,3 multipliziert. Wir beziehen und dabei auf Erfahrungswerte verschiedener Elektrofahrer, eine Studie dazu ist uns nicht bekannt.</li>
+                <li>Motorfahrzeugsteuer: Die Kosten der Motorfahrzeugsteuer werden nach den Vorgaben des ausgewählten Kantons berechnet. Die meisten Kantone gewähren eine Ermässigung auf die Steuer. Genaueres dazu findem Sie im Artikel <a href="/de/transport/artikel/motorfahrzeugsteuer-rabatte-fur-energieeffiziente-fahrzeuge/">Motorfahrzeugsteuer: Rabatte für energieeffiziente Fahrzeuge</a>. Das Feld «Motorfahrzeugsteuer» zeigt immer den Wert ohne verrechnetem Bonus an. Erst in der Grafik und bei «Gesamtbetriebskosten» wird der Bonus verrechnet.</li>
+                <li>
+                    Versicherungsprämie: Der Preis einer Fahrzeugversicherung hängt von vielen Faktoren ab. Der von uns angebene Versicherungsbetrag ist fix und passt sich nicht an, wenn andere Werte geändert werden (zum Beispiel die Distanz). Wir verwenden <a href="https://www.comparis.ch/autoversicherung/default" target="_blank">comparis.ch</a> für unsere Werte. Dabei nehmen wir den Durchschnitt der 5 günstigsten Angebote. Wenn nicht genau das gleiche Fahrzeugmodell vorhanden ist, verwenden wir das ähnlichste Modell. Die wichtigsten Angaben die für die Berechnung verwendet wurden:
+                    <ul>
+                        <li>Geleaset: nein</li>
+                        <li>Kaufdatum: 2018</li>
+                        <li>Wieviele km fahren Sie pro Jahr: 15'000</li>
+                        <li>Verwendungszweck: Privat, Arbeitsweg</li>
+                        <li>Garage vorhanden: nein</li>
+                        <li>Zulassungskanton: BL</li>
+                        <li>Lenker: 30 Jahre, männlich, keine Kinder</li>
+                        <li>Weitere Lenker: nein</li>
+                        <li>Basisdeckungen: Vollkasko</li>
+                        <li>Parkschaden: nein</li>
+                        <li>Zusatzdeckungen: keine</li>
+                        <li>Selbstbehalt: 0</li>
+                        <li>keine Sparangebote</li>
+                    </ul>
+                </li>
+                <li>
+                    <p>Service- und Reparaturkosten: Elektroautos sind im Unterhalt günstiger, da sie weniger Verschleissteile besitzen und allgemein einfacher aufgebaut sind. Es ist aber schwierig diese Einsparung in verbindiche Zahlen zusammenzufassen, denn sie hängen stark davon ab wie das Fahrzeug gefahren wird und wie lange die Herstellergarantie ist. Wir lassen diesen Punkt deshalb bei allen Fahrzeugen uf 0. Sie können aber davon ausgehen, dass Sie auch hier noch einmal Geld sparen werden.</p>
+                </li>
+                <li>
+                    <p>Ladeverlust: Strom kann nicht verlustfrei von Wechselstrom in Gleichstrom umgewandelt werden. Wieviel Prozent des Stroms beim Laden verloren geht, hängt von der Ladeleistung und vom Gerät ab. Wir verwenden deshalb einem fixen Ladeverlust von 15%.</p>
+                </li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+<!--TOOLTIP TEMPLATE -->
+<templates id="templates">
+    <template id="tooltip-template">
+        {{#image}}
+        <img src={{image}} style="height: 75px">{{/image}}
+        {{tooltip}}
+    </template>
+</templates>
